@@ -2,52 +2,38 @@
 (function() {
     'use strict';
 
-    // فقط در صفحهٔ گزارش توصیفی فعال شود
+    // فقط در صفحهٔ گزارش توصیفی فعال می‌شود
     if (!document.querySelector('.reportTosifiSearch.print-panel')) return;
 
-    /* ---------- سبک‌های رابط کاربری ---------- */
+    /* ---------- استایل‌های کمینه و زیبا ---------- */
     function injectStyles() {
         if (document.getElementById('photo-replacer-styles')) return;
         var style = document.createElement('style');
         style.id = 'photo-replacer-styles';
         style.textContent = `
-            .pr-overlay {
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.5); z-index: 9999999;
-                display: flex; align-items: center; justify-content: center;
-                font-family: Tahoma, sans-serif;
+            .pr-floating-btn {
+                position: fixed; bottom: 140px; right: 30px; z-index: 9999999;
+                background: white; border-radius: 50px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+                padding: 12px 22px; font-family: Tahoma, sans-serif; font-size: 14px;
+                font-weight: bold; color: #333; cursor: pointer;
+                display: flex; align-items: center; gap: 8px;
+                transition: transform 0.2s, background 0.2s;
+                user-select: none; border: none;
             }
-            .pr-dialog {
-                background: white; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.3);
-                padding: 24px; text-align: center; min-width: 300px; max-width: 400px;
-                animation: prFadeIn 0.3s ease;
+            .pr-floating-btn:hover { transform: scale(1.03); background: #f0f0f0; }
+            .pr-floating-btn:active { transform: scale(0.97); }
+            .pr-status {
+                position: fixed; bottom: 200px; right: 30px; z-index: 9999999;
+                background: rgba(255,255,255,0.95); border-radius: 8px;
+                padding: 10px 15px; font-family: Tahoma, sans-serif; font-size: 13px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                color: #333; transition: opacity 0.3s;
             }
-            @keyframes prFadeIn { from { opacity:0; transform: scale(0.95); } to { opacity:1; transform: scale(1); } }
-            .pr-dialog h3 { margin: 0 0 16px; color: #333; font-size: 18px; }
-            .pr-dialog p { margin: 0 0 20px; color: #666; font-size: 14px; }
-            .pr-btn {
-                display: inline-block; padding: 10px 20px; margin: 0 8px;
-                border: none; border-radius: 8px; font-size: 14px; font-weight: bold;
-                cursor: pointer; transition: background 0.2s;
-            }
-            .pr-btn-primary { background: #0050ef; color: white; }
-            .pr-btn-primary:hover { background: #003ecb; }
-            .pr-btn-secondary { background: #e9ecef; color: #333; }
-            .pr-btn-secondary:hover { background: #ced4da; }
-            .pr-progress {
-                margin-top: 16px; background: #f1f3f5; border-radius: 8px;
-                height: 8px; width: 100%; overflow: hidden;
-            }
-            .pr-progress-bar {
-                height: 100%; background: linear-gradient(90deg, #51cf66, #40c057);
-                width: 0%; transition: width 0.3s;
-            }
-            .pr-success { color: #2b8a3e; font-weight: bold; margin-top: 10px; }
-            .pr-error { color: #c92a2a; font-weight: bold; margin-top: 10px; }
         `;
         document.head.appendChild(style);
     }
 
+    /* ---------- خواندن فایل به Data URL ---------- */
     function readFileAsDataURL(file) {
         return new Promise(function(resolve, reject) {
             var reader = new FileReader();
@@ -57,124 +43,7 @@
         });
     }
 
-    function showFolderSelector() {
-        return new Promise(function(resolve, reject) {
-            var overlay = document.createElement('div');
-            overlay.className = 'pr-overlay';
-            overlay.innerHTML = `
-                <div class="pr-dialog">
-                    <h3>📁 انتخاب پوشهٔ عکس‌ها</h3>
-                    <p>لطفاً پوشه‌ای را که شامل عکس دانش‌آموزان (با نام کد ملی) است، انتخاب کنید.</p>
-                    <div>
-                        <button class="pr-btn pr-btn-primary" id="pr-select-btn">انتخاب پوشه</button>
-                        <button class="pr-btn pr-btn-secondary" id="pr-cancel-btn">انصراف</button>
-                    </div>
-                    <div class="pr-progress" style="display:none;" id="pr-progress-container">
-                        <div class="pr-progress-bar" id="pr-progress-bar"></div>
-                    </div>
-                    <div id="pr-message"></div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            var selectBtn = document.getElementById('pr-select-btn');
-            var cancelBtn = document.getElementById('pr-cancel-btn');
-            var progressContainer = document.getElementById('pr-progress-container');
-            var progressBar = document.getElementById('pr-progress-bar');
-            var messageDiv = document.getElementById('pr-message');
-
-            function cleanup() {
-                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            }
-
-            cancelBtn.addEventListener('click', function() {
-                cleanup();
-                reject(new Error('انصراف کاربر'));
-            });
-
-            selectBtn.addEventListener('click', function() {
-                selectBtn.disabled = true;
-                cancelBtn.disabled = true;
-                var fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.webkitdirectory = true;
-                fileInput.style.display = 'none';
-                fileInput.addEventListener('change', function() {
-                    if (fileInput.files.length === 0) {
-                        cleanup();
-                        reject(new Error('هیچ فایلی انتخاب نشد'));
-                        return;
-                    }
-                    progressContainer.style.display = 'block';
-                    resolve({ files: fileInput.files, progressBar: progressBar, messageDiv: messageDiv, cleanup: cleanup });
-                });
-                document.body.appendChild(fileInput);
-                fileInput.click();
-                window.addEventListener('focus', function onFocus() {
-                    setTimeout(function() {
-                        if (fileInput.files.length === 0) {
-                            selectBtn.disabled = false;
-                            cancelBtn.disabled = false;
-                            window.removeEventListener('focus', onFocus);
-                        }
-                    }, 100);
-                }, { once: true });
-            });
-        });
-    }
-
-    async function processImages(files, progressBar, messageDiv, cleanup) {
-        try {
-            var imageMap = {};
-            for (var i = 0; i < files.length; i++) {
-                var file = files[i];
-                if (file.type.startsWith('image/')) {
-                    var nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-                    imageMap[nameWithoutExt] = file;
-                }
-            }
-
-            var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-            var total = cards.length;
-            var done = 0;
-            var replacedCount = 0;
-
-            for (var j = 0; j < total; j++) {
-                var card = cards[j];
-                var nationalCode = getNationalCode(card);
-                if (nationalCode && imageMap[nationalCode]) {
-                    var img = card.querySelector('div.pt-2 img.border.rounded');
-                    if (img) {
-                        var dataUrl = await readFileAsDataURL(imageMap[nationalCode]);
-                        img.src = dataUrl;
-                        replacedCount++;
-                    }
-                }
-                done++;
-                var percent = Math.round((done / total) * 100);
-                progressBar.style.width = percent + '%';
-                await new Promise(function(r) { setTimeout(r, 10); });
-            }
-
-            messageDiv.innerHTML = `<span class="pr-success">✅ ${replacedCount} عکس با موفقیت جایگزین شد.</span>`;
-            var selectBtn = document.getElementById('pr-select-btn');
-            var cancelBtn = document.getElementById('pr-cancel-btn');
-            if (selectBtn) selectBtn.style.display = 'none';
-            if (cancelBtn) {
-                cancelBtn.textContent = 'بستن';
-                cancelBtn.disabled = false;
-                cancelBtn.addEventListener('click', cleanup);
-            }
-        } catch (err) {
-            messageDiv.innerHTML = `<span class="pr-error">❌ خطا: ${err.message}</span>`;
-            var cancelBtn = document.getElementById('pr-cancel-btn');
-            if (cancelBtn) {
-                cancelBtn.textContent = 'بستن';
-                cancelBtn.disabled = false;
-            }
-        }
-    }
-
+    /* ---------- استخراج کد ملی از کارت ---------- */
     function getNationalCode(card) {
         var cells = card.querySelectorAll('td');
         for (var i = 0; i < cells.length; i++) {
@@ -188,60 +57,160 @@
         return null;
     }
 
-    /* ---------- اتصال به نوار عنوان پنل گزارش ---------- */
-    function init() {
+    /* ---------- رابط کاربری جدید ---------- */
+    function initUI() {
         injectStyles();
 
-        // منتظر می‌مانیم تا پنل گزارش ساخته شود
+        // دکمهٔ اصلی
+        var btn = document.createElement('button');
+        btn.className = 'pr-floating-btn';
+        btn.innerHTML = '📁 انتخاب پوشه عکس‌ها';
+        btn.style.display = 'none';
+        document.body.appendChild(btn);
+
+        // وضعیت
+        var statusDiv = document.createElement('div');
+        statusDiv.className = 'pr-status';
+        statusDiv.style.display = 'none';
+        document.body.appendChild(statusDiv);
+
+        var selectedFiles = [];
+        var fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.webkitdirectory = true;
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+
+        // نمایش / مخفی‌سازی دکمه با کد 8991
+        function showButton() {
+            btn.style.display = 'flex';
+            statusDiv.style.display = 'none';
+            selectedFiles = [];
+            btn.innerHTML = '📁 انتخاب پوشه عکس‌ها';
+            btn.disabled = false;
+        }
+
+        function hideButton() {
+            btn.style.display = 'none';
+            statusDiv.style.display = 'none';
+        }
+
+        // کلیک روی دکمه ← باز کردن انتخاب پوشه
+        btn.addEventListener('click', function() {
+            if (selectedFiles.length === 0) {
+                fileInput.click();
+            } else {
+                // شروع جایگزینی
+                applyImages();
+            }
+        });
+
+        // بعد از انتخاب پوشه
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length === 0) {
+                // کاربر لغو کرد
+                btn.innerHTML = '📁 انتخاب پوشه عکس‌ها';
+                statusDiv.style.display = 'none';
+                return;
+            }
+            selectedFiles = Array.from(fileInput.files).filter(f => f.type.startsWith('image/'));
+            var count = selectedFiles.length;
+            btn.innerHTML = '✅ اعمال عکس‌ها (' + count + ' عکس)';
+            btn.disabled = false;
+            statusDiv.textContent = count + ' عکس انتخاب شد.';
+            statusDiv.style.display = 'block';
+        });
+
+        async function applyImages() {
+            btn.disabled = true;
+            statusDiv.textContent = 'در حال جایگزینی...';
+            // نوار پیشرفت کوچک
+            var progressBar = document.createElement('div');
+            progressBar.style.cssText = 'height:4px;background:#e9ecef;border-radius:2px;margin-top:6px;width:100%';
+            var progressFill = document.createElement('div');
+            progressFill.style.cssText = 'height:100%;background:#51cf66;width:0%;transition:width 0.3s;border-radius:2px';
+            progressBar.appendChild(progressFill);
+            statusDiv.appendChild(progressBar);
+
+            // نگاشت کد ملی -> فایل
+            var imageMap = {};
+            for (var i = 0; i < selectedFiles.length; i++) {
+                var nameWithoutExt = selectedFiles[i].name.replace(/\.[^/.]+$/, '');
+                imageMap[nameWithoutExt] = selectedFiles[i];
+            }
+
+            var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
+            var total = cards.length;
+            var done = 0;
+            var replacedCount = 0;
+
+            for (var j = 0; j < total; j++) {
+                var card = cards[j];
+                var nationalCode = getNationalCode(card);
+                if (nationalCode && imageMap[nationalCode]) {
+                    var img = card.querySelector('div.pt-2 img.border.rounded');
+                    if (img) {
+                        try {
+                            var dataUrl = await readFileAsDataURL(imageMap[nationalCode]);
+                            img.src = dataUrl;
+                            replacedCount++;
+                        } catch (e) {
+                            // بی‌صدا از خطا عبور کن
+                        }
+                    }
+                }
+                done++;
+                var percent = Math.round((done / total) * 100);
+                progressFill.style.width = percent + '%';
+                await new Promise(function(r) { setTimeout(r, 10); });
+            }
+
+            statusDiv.textContent = '✅ ' + replacedCount + ' عکس جایگزین شد.';
+            btn.innerHTML = '📁 انتخاب پوشه عکس‌ها';
+            btn.disabled = false;
+            selectedFiles = [];
+            // حذف نوار پیشرفت بعد از 2 ثانیه
+            setTimeout(function() {
+                statusDiv.style.display = 'none';
+            }, 2500);
+        }
+
+        // کلید فوری: 8991
+        function setupKeyDetection() {
+            var target = document.getElementById('reportTosifi-editor-panel');
+            if (!target) return;
+            var hiddenInput = document.createElement('input');
+            hiddenInput.type = 'text';
+            hiddenInput.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:1px;opacity:0;border:none;z-index:-1';
+            target.style.position = 'relative';
+            target.appendChild(hiddenInput);
+
+            target.addEventListener('click', function(e) {
+                if (!e.target.closest('button') && !e.target.closest('span') && !e.target.closest('input')) {
+                    hiddenInput.focus();
+                }
+            });
+
+            hiddenInput.addEventListener('input', function() {
+                if (hiddenInput.value === '8991') {
+                    hiddenInput.value = '';
+                    showButton();
+                }
+            });
+        }
+
+        // صبر برای ساخته شدن پنل گزارش
         var checkPanel = setInterval(function() {
-            var panel = document.getElementById('reportTosifi-editor-panel');
-            if (panel) {
+            if (document.getElementById('reportTosifi-editor-panel')) {
                 clearInterval(checkPanel);
-                setupHiddenInput(panel);
+                setupKeyDetection();
             }
         }, 200);
     }
 
-    function setupHiddenInput(panel) {
-        // نوار عنوان اولین div داخل پنل است
-        var titleBar = panel.querySelector('div[style*="cursor: move"]');
-        if (!titleBar) return;
-
-        var hiddenInput = document.createElement('input');
-        hiddenInput.type = 'text';
-        hiddenInput.setAttribute('autocomplete', 'off');
-        hiddenInput.style.cssText = [
-            'position: absolute; top: 0; left: 0;',
-            'width: 1px; height: 1px;',
-            'opacity: 0; border: none; outline: none;',
-            'z-index: -1;'
-        ].join('');
-        titleBar.style.position = 'relative';
-        titleBar.appendChild(hiddenInput);
-
-        titleBar.addEventListener('click', function(e) {
-            // فوکوس به ورودی مخفی، اما مزاحم درگ و دکمه‌ها نمی‌شود
-            if (!e.target.closest('button') && !e.target.closest('span')) {
-                hiddenInput.focus();
-            }
-        });
-
-        hiddenInput.addEventListener('input', function() {
-            if (hiddenInput.value === '8991') {
-                hiddenInput.value = '';
-                showFolderSelector().then(function(result) {
-                    processImages(result.files, result.progressBar, result.messageDiv, result.cleanup);
-                }).catch(function(err) {
-                    console.log('عملیات لغو یا خطا:', err);
-                });
-            }
-        });
-    }
-
-    // راه‌اندازی اولیه
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        init();
+        initUI();
     } else {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', initUI);
     }
 })();
