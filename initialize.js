@@ -1,6 +1,6 @@
 // initialize.js
 (function() {
-    var basePath = 'https://marjani-mmj.github.io/sida-report-editor/';
+    var basePath = 'https://marjani-mmj.github.io/sida-krp/';
     var scripts = [
         'core.js',
         'section-daftsrNatayej.js',
