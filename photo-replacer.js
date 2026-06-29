@@ -169,7 +169,7 @@
             btn.innerHTML = '📁 انتخاب پوشه عکس‌ها';
             btn.disabled = false;
             selectedFiles = [];
-            // حذف نوار پیشرفت بعد از 2 ثانیه
+            // حذف نوار پیشرفت بعد از 2.5 ثانیه
             setTimeout(function() {
                 statusDiv.style.display = 'none';
             }, 2500);
