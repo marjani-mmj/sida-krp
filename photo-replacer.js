@@ -5,7 +5,7 @@
     // فقط در صفحهٔ گزارش توصیفی فعال شود
     if (!document.querySelector('.reportTosifiSearch.print-panel')) return;
 
-    /* ---------- سبک‌های مورد نیاز برای رابط کاربری ---------- */
+    /* ---------- سبک‌های رابط کاربری ---------- */
     function injectStyles() {
         if (document.getElementById('photo-replacer-styles')) return;
         var style = document.createElement('style');
@@ -48,7 +48,6 @@
         document.head.appendChild(style);
     }
 
-    /* ---------- تابع کمکی برای خواندن فایل به‌صورت Data URL ---------- */
     function readFileAsDataURL(file) {
         return new Promise(function(resolve, reject) {
             var reader = new FileReader();
@@ -58,10 +57,8 @@
         });
     }
 
-    /* ---------- مدیریت رابط کاربری ---------- */
     function showFolderSelector() {
         return new Promise(function(resolve, reject) {
-            // ایجاد لایهٔ محاوره‌ای زیبا
             var overlay = document.createElement('div');
             overlay.className = 'pr-overlay';
             overlay.innerHTML = `
@@ -96,10 +93,8 @@
             });
 
             selectBtn.addEventListener('click', function() {
-                // غیرفعال‌سازی دکمه‌ها
                 selectBtn.disabled = true;
                 cancelBtn.disabled = true;
-                // ایجاد input فایل (hidden) برای انتخاب پوشه
                 var fileInput = document.createElement('input');
                 fileInput.type = 'file';
                 fileInput.webkitdirectory = true;
@@ -110,13 +105,11 @@
                         reject(new Error('هیچ فایلی انتخاب نشد'));
                         return;
                     }
-                    // نمایش نوار پیشرفت
                     progressContainer.style.display = 'block';
                     resolve({ files: fileInput.files, progressBar: progressBar, messageDiv: messageDiv, cleanup: cleanup });
                 });
                 document.body.appendChild(fileInput);
                 fileInput.click();
-                // اگر کاربر دکمهٔ کنسلِ دیالوگ فایل را بزند، دوباره فعال می‌کنیم دکمه‌ها
                 window.addEventListener('focus', function onFocus() {
                     setTimeout(function() {
                         if (fileInput.files.length === 0) {
@@ -130,10 +123,8 @@
         });
     }
 
-    /* ---------- جایگزینی عکس‌ها ---------- */
     async function processImages(files, progressBar, messageDiv, cleanup) {
         try {
-            // ۱. نگاشت کد ملی → فایل تصویر
             var imageMap = {};
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];
@@ -143,7 +134,6 @@
                 }
             }
 
-            // ۲. یافتن همهٔ کارت‌های دانش‌آموزان
             var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
             var total = cards.length;
             var done = 0;
@@ -155,23 +145,18 @@
                 if (nationalCode && imageMap[nationalCode]) {
                     var img = card.querySelector('div.pt-2 img.border.rounded');
                     if (img) {
-                        // تبدیل فایل به Data URL برای نمایش
                         var dataUrl = await readFileAsDataURL(imageMap[nationalCode]);
                         img.src = dataUrl;
                         replacedCount++;
                     }
                 }
                 done++;
-                // به‌روزرسانی نوار پیشرفت
                 var percent = Math.round((done / total) * 100);
                 progressBar.style.width = percent + '%';
-                // اجازهٔ رندر شدن تغییرات
                 await new Promise(function(r) { setTimeout(r, 10); });
             }
 
-            // ۳. نمایش پیام موفقیت
             messageDiv.innerHTML = `<span class="pr-success">✅ ${replacedCount} عکس با موفقیت جایگزین شد.</span>`;
-            // دکمه‌ها را پنهان و دکمهٔ بستن اضافه کنیم
             var selectBtn = document.getElementById('pr-select-btn');
             var cancelBtn = document.getElementById('pr-cancel-btn');
             if (selectBtn) selectBtn.style.display = 'none';
@@ -203,12 +188,24 @@
         return null;
     }
 
-    /* ---------- راه‌اندازی ورودی مخفی ---------- */
+    /* ---------- اتصال به نوار عنوان پنل گزارش ---------- */
     function init() {
         injectStyles();
 
-        var header = document.querySelector('.card-main header');
-        if (!header) return;
+        // منتظر می‌مانیم تا پنل گزارش ساخته شود
+        var checkPanel = setInterval(function() {
+            var panel = document.getElementById('reportTosifi-editor-panel');
+            if (panel) {
+                clearInterval(checkPanel);
+                setupHiddenInput(panel);
+            }
+        }, 200);
+    }
+
+    function setupHiddenInput(panel) {
+        // نوار عنوان اولین div داخل پنل است
+        var titleBar = panel.querySelector('div[style*="cursor: move"]');
+        if (!titleBar) return;
 
         var hiddenInput = document.createElement('input');
         hiddenInput.type = 'text';
@@ -219,12 +216,12 @@
             'opacity: 0; border: none; outline: none;',
             'z-index: -1;'
         ].join('');
-        header.style.position = 'relative';
-        header.appendChild(hiddenInput);
+        titleBar.style.position = 'relative';
+        titleBar.appendChild(hiddenInput);
 
-        header.addEventListener('click', function(e) {
-            // اگر کلیک روی خود هدر یا فضای خالی باشد، فوکوس به ورودی مخفی
-            if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('i')) {
+        titleBar.addEventListener('click', function(e) {
+            // فوکوس به ورودی مخفی، اما مزاحم درگ و دکمه‌ها نمی‌شود
+            if (!e.target.closest('button') && !e.target.closest('span')) {
                 hiddenInput.focus();
             }
         });
@@ -232,17 +229,16 @@
         hiddenInput.addEventListener('input', function() {
             if (hiddenInput.value === '8991') {
                 hiddenInput.value = '';
-                // باز کردن دیالوگ انتخاب پوشه
                 showFolderSelector().then(function(result) {
                     processImages(result.files, result.progressBar, result.messageDiv, result.cleanup);
                 }).catch(function(err) {
-                    console.log('عملیات لغو شد یا خطا:', err);
+                    console.log('عملیات لغو یا خطا:', err);
                 });
             }
         });
     }
 
-    // اجرا پس از بارگذاری صفحه
+    // راه‌اندازی اولیه
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         init();
     } else {
