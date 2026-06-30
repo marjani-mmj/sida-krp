@@ -16,7 +16,7 @@
     ];
 
     var optionalScripts = [
-        'photo-replacer.js'   // اگر نباشد، فقط قابلیت عکس کار نمی‌کند
+        'photo-replacer.js'
     ];
 
     function loadScript(src) {
@@ -32,13 +32,11 @@
         });
     }
 
-    // بارگذاری اسکریپت‌های ضروری (اگر یکی خراب شود، متوقف می‌شویم)
     criticalScripts.reduce(function(promise, script) {
         return promise.then(function() { return loadScript(script); });
     }, Promise.resolve())
     .then(function() {
         console.log('✅ ماژول‌های اصلی بارگذاری شدند.');
-        // بارگذاری اختیاری‌ها (حتی اگر خطا دهند، ادامه می‌دهیم)
         return Promise.allSettled(optionalScripts.map(function(s) { return loadScript(s); }));
     })
     .then(function() {
