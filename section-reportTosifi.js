@@ -1,244 +1,339 @@
-// section-reportTosifi.js
+// panel-reportTosifi.js
 (function() {
     'use strict';
+    console.log('panel-reportTosifi.js اجرا شد');
 
-    /* ---------- متغیرهای داخلی ---------- */
-    var lastTop = 0, lastBottom = 0, lastRight = 0, lastWidth = 1090;
-    var zoomLevel = 100;                 // درصد zoom
-    var colWidths = [10, 25, 20, 10, 20, 15]; // پیش‌فرض (جمع = 100)
-
-    /* ---------- مقداردهی اولیه ---------- */
-    function initStoredValues() {
-        var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        if (cards.length > 0) {
-            var firstCard = cards[0];
-            lastRight = parseInt(window.getComputedStyle(firstCard).marginRight) || 0;
-            lastWidth = parseInt(window.getComputedStyle(firstCard).width) || 1090;
-            lastTop = parseInt(window.getComputedStyle(firstCard).marginTop) || 0;
-        }
-        initColumnWidths();
-        updateDisplays();
-    }
-
-    function initColumnWidths() {
-        var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        if (cards.length === 0) return;
-        // اولین جدول دارای thead با ۶ ستون
-        var table = cards[0].querySelector('table.table-bordered:has(thead tr th:nth-child(6))');
-        if (!table) return;
-        var ths = table.querySelectorAll('thead tr th');
-        if (ths.length !== 6) return;
-        var totalWidth = table.offsetWidth;
-        var widths = [];
-        for (var i = 0; i < 6; i++) {
-            var w = ths[i].offsetWidth;
-            widths.push(Math.round((w / totalWidth) * 100));
-        }
-        // تنظیم مجدد برای جمع ۱۰۰
-        var sum = widths.reduce(function(a, b) { return a + b; }, 0);
-        if (sum !== 100) {
-            // توزیع خطا در آخرین ستون
-            var diff = 100 - sum;
-            widths[5] += diff;
-        }
-        colWidths = widths;
-    }
-
-    function updateDisplays() {
-        var dt = document.getElementById('reportTosifi-topHeightDisp');
-        if (dt) dt.textContent = lastTop;
-        var db = document.getElementById('reportTosifi-bottomHeightDisp');
-        if (db) db.textContent = lastBottom;
-        var dr = document.getElementById('reportTosifi-rightHeightDisp');
-        if (dr) dr.textContent = lastRight;
-        var dw = document.getElementById('reportTosifi-widthDisp');
-        if (dw) dw.textContent = lastWidth;
-        // به‌روزرسانی نمایشگر zoom
-        var dz = document.getElementById('reportTosifi-zoomDisp');
-        if (dz) dz.textContent = zoomLevel + '%';
-    }
-
-    /* ---------- مدیریت حاشیه‌ها (بالا margin-top) ---------- */
-    function ensureBottomSpacersExist() {
-        if (document.querySelector('.reportTosifi-spacer-bottom')) return;
-        var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        cards.forEach(function(card) {
-            var bottomSpacer = document.createElement('div');
-            bottomSpacer.className = 'reportTosifi-spacer reportTosifi-spacer-bottom';
-            bottomSpacer.style.height = '0px';
-            card.parentNode.insertBefore(bottomSpacer, card.nextSibling);
-        });
-    }
-
-    function adjustTopMargin(amount) {
-        var blocks = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        var newVal = 0;
-        blocks.forEach(function(block) {
-            var cur = parseInt(window.getComputedStyle(block).marginTop) || 0;
-            newVal = Math.max(0, cur + amount);
-            block.style.setProperty('margin-top', newVal + 'px', 'important');
-        });
-        lastTop = newVal;
-        var display = document.getElementById('reportTosifi-topHeightDisp');
-        if (display) display.textContent = newVal;
-    }
-
-    function adjustBottomSpacing(amount) {
-        ensureBottomSpacersExist();
-        var spacers = document.querySelectorAll('.reportTosifi-spacer-bottom');
-        var newHeight = 0;
-        spacers.forEach(function(spacer) {
-            var cur = parseInt(spacer.style.height) || 0;
-            newHeight = Math.max(0, cur + amount);
-            spacer.style.height = newHeight + 'px';
-        });
-        if (spacers.length > 0) {
-            lastBottom = newHeight;
-            var display = document.getElementById('reportTosifi-bottomHeightDisp');
-            if (display) display.textContent = newHeight;
-        }
-    }
-
-    function adjustRightMargin(amount) {
-        var blocks = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        var newVal = 0;
-        blocks.forEach(function(block) {
-            var cur = parseInt(window.getComputedStyle(block).marginRight) || 0;
-            newVal = cur + amount;
-            block.style.setProperty('margin-right', newVal + 'px', 'important');
-        });
-        lastRight = newVal;
-        var display = document.getElementById('reportTosifi-rightHeightDisp');
-        if (display) display.textContent = newVal;
-    }
-
-    function adjustWidth(amount) {
-        var blocks = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        var newVal = lastWidth;
-        blocks.forEach(function(block) {
-            var cur = parseInt(window.getComputedStyle(block).width) || lastWidth;
-            newVal = cur + amount;
-            if (newVal < 500) newVal = 500;
-            if (newVal > 2000) newVal = 2000;
-            block.style.setProperty('width', newVal + 'px', 'important');
-            block.style.setProperty('max-width', newVal + 'px', 'important');
-        });
-        lastWidth = newVal;
-        var display = document.getElementById('reportTosifi-widthDisp');
-        if (display) display.textContent = newVal;
-    }
-
-    function applyStored() {
-        var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        cards.forEach(function(card) {
-            card.style.setProperty('margin-top', lastTop + 'px', 'important');
-            card.style.setProperty('margin-right', lastRight + 'px', 'important');
-            card.style.setProperty('width', lastWidth + 'px', 'important');
-            card.style.setProperty('max-width', lastWidth + 'px', 'important');
-        });
-        ensureBottomSpacersExist();
-        document.querySelectorAll('.reportTosifi-spacer-bottom').forEach(function(s) {
-            s.style.height = lastBottom + 'px';
-        });
-        applyZoom();
-        applyColumnWidths();
-        updateDisplays();
-    }
-
-    /* ---------- بزرگ‌نمایی (Zoom) ---------- */
-    function applyZoom() {
-        var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        var zoomValue = zoomLevel / 100;
-        cards.forEach(function(card) {
-            card.style.zoom = zoomValue;   // خاصیت zoom مرورگر
-        });
-    }
-
-    /* ---------- پهنای ستون‌ها ---------- */
-    function applyColumnWidths() {
-        var cards = document.querySelectorAll('[ng-repeat="rowItem in dataItems"]');
-        cards.forEach(function(card) {
-            var table = card.querySelector('table.table-bordered:has(thead tr th:nth-child(6))');
-            if (!table) return;
-            // ایجاد یا به‌روزرسانی colgroup
-            var colgroup = table.querySelector('colgroup.custom-colgroup');
-            if (!colgroup) {
-                colgroup = document.createElement('colgroup');
-                colgroup.className = 'custom-colgroup';
-                for (var i = 0; i < 6; i++) {
-                    var col = document.createElement('col');
-                    colgroup.appendChild(col);
+    // صبر می‌کنیم تا حتماً section-reportTosifi.js هندلرها را ثبت کند
+    function waitForHandlers(callback) {
+        if (window.handlersRegistry && window.handlersRegistry['reportTosifi']) {
+            callback();
+        } else {
+            console.log('منتظر ثبت handlers...');
+            var check = setInterval(function() {
+                if (window.handlersRegistry && window.handlersRegistry['reportTosifi']) {
+                    clearInterval(check);
+                    callback();
                 }
-                table.insertBefore(colgroup, table.firstChild);
-            }
-            var cols = colgroup.querySelectorAll('col');
-            for (var j = 0; j < 6; j++) {
-                cols[j].style.width = colWidths[j] + '%';
-            }
-            // اطمینان از fixed layout
-            table.style.tableLayout = 'fixed';
-            table.style.width = '100%';
-        });
+            }, 200);
+        }
     }
 
-    function getColumnWidths() {
-        return colWidths.slice(); // کپی
-    }
+    function init() {
+        // فقط در صفحه‌ای که کلاس مخصوص گزارش را دارد فعال می‌شود
+        if (!document.querySelector('.reportTosifiSearch.print-panel')) {
+            console.warn('panel-reportTosifi: صفحهٔ گزارش نیست، پنل ساخته نمی‌شود');
+            return;
+        }
 
-    function setColumnWidth(index, value) {
-        if (index < 0 || index > 5) return;
-        var newVal = Math.max(1, Math.min(90, parseInt(value) || 1)); // حداقل 1%
-        colWidths[index] = newVal;
-        applyColumnWidths();
-        // به‌روزرسانی نمایشگر جمع در پنل
-        var totalEl = document.getElementById('reportTosifi-colTotal');
-        if (totalEl) {
-            var sum = colWidths.reduce(function(a,b){return a+b;},0);
+        var panel = null;
+        var toggleIcon = null;
+        var isPanelVisible = false;
+        var dragState = { dragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+        var colSectionVisible = false;
+
+        function minimizePanel() {
+            if (!panel) return;
+            isPanelVisible = false;
+            panel.style.display = 'none';
+            if (toggleIcon) toggleIcon.innerHTML = '📊';
+        }
+        window.minimizeReportPanel = minimizePanel;
+
+        function createFloatingIcon() {
+            if (toggleIcon) return;
+            toggleIcon = document.createElement('div');
+            toggleIcon.id = 'reportTosifi-floating-toggle';
+            toggleIcon.innerHTML = '📊';
+            toggleIcon.title = 'تنظیمات گزارش پیشرفت تحصیلی';
+            toggleIcon.style.cssText = 'position:fixed;bottom:20px;right:80px;z-index:9999999;width:48px;height:48px;background:linear-gradient(135deg,#84fab0,#8fd3f4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;box-shadow:0 6px 12px rgba(0,0,0,0.4);user-select:none;transition:transform 0.2s;';
+            toggleIcon.addEventListener('mouseenter', function() { this.style.transform = 'scale(1.1)'; });
+            toggleIcon.addEventListener('mouseleave', function() { this.style.transform = 'scale(1)'; });
+            toggleIcon.addEventListener('click', function() {
+                if (!panel) createPanel();
+                if (isPanelVisible) {
+                    minimizePanel();
+                } else {
+                    if (window.minimizeMainPanel) window.minimizeMainPanel();
+                    isPanelVisible = true;
+                    panel.style.display = 'block';
+                    toggleIcon.innerHTML = '🔧';
+                }
+            });
+            document.body.appendChild(toggleIcon);
+            console.log('دکمهٔ شناور گزارش ساخته شد');
+        }
+
+        function createPanel() {
+            if (panel) return;
+            panel = document.createElement('div');
+            panel.id = 'reportTosifi-editor-panel';
+            panel.style.cssText = 'position:fixed;top:100px;right:20px;z-index:999999;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);padding:12px;width:320px;font-family:Tahoma,sans-serif;font-size:13px;display:none;user-select:none;';
+
+            var titleBar = document.createElement('div');
+            titleBar.style.cssText = 'cursor:move;background:#f8f9fa;padding:6px 30px 6px 10px;margin:-12px -12px 10px -12px;border-radius:8px 8px 0 0;font-weight:bold;color:#333;border-bottom:1px solid #dee2e6;position:relative;';
+            titleBar.textContent = 'تنظیمات گزارش';
+            titleBar.addEventListener('mousedown', startDrag);
+            var closeBtn = document.createElement('span');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.cssText = 'position:absolute;top:4px;left:8px;font-size:18px;font-weight:bold;color:#888;cursor:pointer;line-height:1;';
+            closeBtn.title = 'بستن پنل';
+            closeBtn.addEventListener('click', function(e) { e.stopPropagation(); minimizePanel(); });
+            titleBar.appendChild(closeBtn);
+            panel.appendChild(titleBar);
+
+            var secMargin = document.createElement('div');
+            secMargin.innerHTML = '<b style="color:#495057;">حاشیه‌ها</b>';
+            secMargin.style.marginBottom = '8px';
+            panel.appendChild(secMargin);
+
+            function addDirectionRow(label, incFineId, decFineId, dispId, incCoarseId, decCoarseId) {
+                var container = document.createElement('div');
+                container.style.cssText = 'margin-bottom:6px;';
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;';
+
+                var lbl = document.createElement('span');
+                lbl.textContent = label;
+                lbl.style.cssText = 'width:45px;text-align:right;margin-left:5px;font-weight:bold;color:#495057;';
+                row.appendChild(lbl);
+
+                var decCoarse = document.createElement('button');
+                decCoarse.id = decCoarseId;
+                decCoarse.textContent = '−۵';
+                decCoarse.style.cssText = 'width:32px;height:28px;font-size:13px;font-weight:bold;line-height:1;margin:0 1px;background:#ffc9c9;border:1px solid #ff8787;border-radius:4px;cursor:pointer;color:#c92a2a;';
+                row.appendChild(decCoarse);
+                var decFine = document.createElement('button');
+                decFine.id = decFineId;
+                decFine.textContent = '−';
+                decFine.style.cssText = 'width:28px;height:28px;font-size:16px;font-weight:bold;line-height:1;margin:0 2px;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;cursor:pointer;color:#495057;';
+                row.appendChild(decFine);
+                var disp = document.createElement('div');
+                disp.id = dispId;
+                disp.style.cssText = 'width:36px;text-align:center;font-weight:bold;font-size:14px;color:#0050ef;';
+                disp.textContent = '0';
+                row.appendChild(disp);
+                var incFine = document.createElement('button');
+                incFine.id = incFineId;
+                incFine.textContent = '+';
+                incFine.style.cssText = 'width:28px;height:28px;font-size:16px;font-weight:bold;line-height:1;margin:0 2px;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;cursor:pointer;color:#495057;';
+                row.appendChild(incFine);
+                var incCoarse = document.createElement('button');
+                incCoarse.id = incCoarseId;
+                incCoarse.textContent = '+۵';
+                incCoarse.style.cssText = 'width:32px;height:28px;font-size:13px;font-weight:bold;line-height:1;margin:0 1px;background:#b2f2bb;border:1px solid #51cf66;border-radius:4px;cursor:pointer;color:#2b8a3e;';
+                row.appendChild(incCoarse);
+                container.appendChild(row);
+                panel.appendChild(container);
+            }
+
+            addDirectionRow('بالا', 'reportTosifi-increaseTopBtn', 'reportTosifi-decreaseTopBtn', 'reportTosifi-topHeightDisp', 'reportTosifi-increaseTopCoarseBtn', 'reportTosifi-decreaseTopCoarseBtn');
+            addDirectionRow('پایین', 'reportTosifi-increaseBottomBtn', 'reportTosifi-decreaseBottomBtn', 'reportTosifi-bottomHeightDisp', 'reportTosifi-increaseBottomCoarseBtn', 'reportTosifi-decreaseBottomCoarseBtn');
+            addDirectionRow('راست', 'reportTosifi-increaseRightBtn', 'reportTosifi-decreaseRightBtn', 'reportTosifi-rightHeightDisp', 'reportTosifi-increaseRightCoarseBtn', 'reportTosifi-decreaseRightCoarseBtn');
+            addDirectionRow('پهنا', 'reportTosifi-increaseWidthBtn', 'reportTosifi-decreaseWidthBtn', 'reportTosifi-widthDisp', 'reportTosifi-increaseWidthCoarseBtn', 'reportTosifi-decreaseWidthCoarseBtn');
+
+            var zoomContainer = document.createElement('div');
+            zoomContainer.style.cssText = 'margin-bottom:6px;margin-top:6px;';
+            var zoomRow = document.createElement('div');
+            zoomRow.style.cssText = 'display:flex;align-items:center;';
+            var zoomLabel = document.createElement('span');
+            zoomLabel.textContent = 'Zoom';
+            zoomLabel.style.cssText = 'width:45px;text-align:right;margin-left:5px;font-weight:bold;color:#495057;';
+            zoomRow.appendChild(zoomLabel);
+            var decZoomCoarse = document.createElement('button');
+            decZoomCoarse.id = 'reportTosifi-decreaseZoomCoarseBtn';
+            decZoomCoarse.textContent = '−۵';
+            decZoomCoarse.style.cssText = 'width:32px;height:28px;font-size:13px;font-weight:bold;line-height:1;margin:0 1px;background:#ffc9c9;border:1px solid #ff8787;border-radius:4px;cursor:pointer;color:#c92a2a;';
+            zoomRow.appendChild(decZoomCoarse);
+            var decZoom = document.createElement('button');
+            decZoom.id = 'reportTosifi-decreaseZoomBtn';
+            decZoom.textContent = '−';
+            decZoom.style.cssText = 'width:28px;height:28px;font-size:16px;font-weight:bold;line-height:1;margin:0 2px;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;cursor:pointer;color:#495057;';
+            zoomRow.appendChild(decZoom);
+            var zoomDisp = document.createElement('div');
+            zoomDisp.id = 'reportTosifi-zoomDisp';
+            zoomDisp.textContent = '100%';
+            zoomDisp.style.cssText = 'width:42px;text-align:center;font-weight:bold;font-size:14px;color:#0050ef;';
+            zoomRow.appendChild(zoomDisp);
+            var incZoom = document.createElement('button');
+            incZoom.id = 'reportTosifi-increaseZoomBtn';
+            incZoom.textContent = '+';
+            incZoom.style.cssText = 'width:28px;height:28px;font-size:16px;font-weight:bold;line-height:1;margin:0 2px;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;cursor:pointer;color:#495057;';
+            zoomRow.appendChild(incZoom);
+            var incZoomCoarse = document.createElement('button');
+            incZoomCoarse.id = 'reportTosifi-increaseZoomCoarseBtn';
+            incZoomCoarse.textContent = '+۵';
+            incZoomCoarse.style.cssText = 'width:32px;height:28px;font-size:13px;font-weight:bold;line-height:1;margin:0 1px;background:#b2f2bb;border:1px solid #51cf66;border-radius:4px;cursor:pointer;color:#2b8a3e;';
+            zoomRow.appendChild(incZoomCoarse);
+            zoomContainer.appendChild(zoomRow);
+            panel.appendChild(zoomContainer);
+
+            var applyBtn = document.createElement('button');
+            applyBtn.id = 'reportTosifi-applySpacingBtn';
+            applyBtn.textContent = 'اعمال فاصله‌ها';
+            applyBtn.style.cssText = 'margin-top:8px;width:100%;padding:6px;background:#0050ef;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;transition:background 0.2s;';
+            panel.appendChild(applyBtn);
+
+            // بخش ستون‌ها (همانند قبل)
+            var colToggleDiv = document.createElement('div');
+            colToggleDiv.style.cssText = 'margin-top:10px;';
+            var colToggleBtn = document.createElement('button');
+            colToggleBtn.textContent = 'تنظیمات ستون‌ها ▶';
+            colToggleBtn.style.cssText = 'width:100%;padding:5px;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;cursor:pointer;font-weight:bold;color:#333;';
+            colToggleDiv.appendChild(colToggleBtn);
+            var colContent = document.createElement('div');
+            colContent.id = 'reportTosifi-colContent';
+            colContent.style.cssText = 'display:none;background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;padding:8px;margin-top:6px;';
+            var colHeader = document.createElement('div');
+            colHeader.style.cssText = 'display:flex;justify-content:space-between;margin-bottom:4px;font-weight:bold;color:#495057;';
+            colHeader.innerHTML = '<span>ستون</span><span>٪</span>';
+            colContent.appendChild(colHeader);
+            var colLabels = ['ستون ۱', 'ستون ۲', 'ستون ۳', 'ستون ۴', 'ستون ۵', 'ستون ۶'];
+            var colInputs = [];
+            var colDisplays = [];
+            for (var i = 0; i < 6; i++) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;margin-bottom:4px;';
+                var lbl = document.createElement('span');
+                lbl.textContent = colLabels[i];
+                lbl.style.cssText = 'width:50px;font-size:12px;color:#333;';
+                row.appendChild(lbl);
+                var input = document.createElement('input');
+                input.type = 'range';
+                input.min = '1';
+                input.max = '90';
+                input.value = '10';
+                input.style.cssText = 'flex:1;margin:0 5px;';
+                colInputs.push(input);
+                row.appendChild(input);
+                var disp = document.createElement('span');
+                disp.textContent = '10%';
+                disp.style.cssText = 'width:30px;text-align:center;font-size:12px;color:#0050ef;';
+                colDisplays.push(disp);
+                row.appendChild(disp);
+                colContent.appendChild(row);
+            }
+            var totalRow = document.createElement('div');
+            totalRow.style.cssText = 'margin-top:6px;font-weight:bold;text-align:center;';
+            var totalLabel = document.createElement('span');
+            totalLabel.textContent = 'جمع: ';
+            var totalValue = document.createElement('span');
+            totalValue.id = 'reportTosifi-colTotal';
+            totalValue.textContent = '100%';
+            totalValue.style.color = '#2b8a3e';
+            totalRow.appendChild(totalLabel);
+            totalRow.appendChild(totalValue);
+            colContent.appendChild(totalRow);
+            colToggleDiv.appendChild(colContent);
+            panel.appendChild(colToggleDiv);
+
+            var footerText = document.createElement('div');
+            footerText.style.cssText = 'margin-top:12px;text-align:center;font-size:11px;color:#adb5bd;line-height:1.6;';
+            footerText.innerHTML = 'اداره کل آموزش و پرورش خراسان رضوی<br>آموزش و پرورش خلیل آباد <br>کارشناسی سنجش - marjani.mmj@gmail.com';
+            panel.appendChild(footerText);
+
+            document.body.appendChild(panel);
+            console.log('پنل گزارش ساخته شد');
+
+            colToggleBtn.addEventListener('click', function() {
+                colSectionVisible = !colSectionVisible;
+                colContent.style.display = colSectionVisible ? 'block' : 'none';
+                colToggleBtn.textContent = 'تنظیمات ستون‌ها ' + (colSectionVisible ? '▼' : '▶');
+            });
+
+            attachEventListeners(colInputs, colDisplays, totalValue);
+        }
+
+        function startDrag(e) {
+            e.preventDefault();
+            var rect = panel.getBoundingClientRect();
+            panel.style.right = 'auto';
+            panel.style.left = rect.left + 'px';
+            dragState.dragging = true;
+            dragState.startX = e.clientX;
+            dragState.startY = e.clientY;
+            dragState.startLeft = panel.offsetLeft;
+            dragState.startTop = panel.offsetTop;
+            window.addEventListener('mousemove', onDrag);
+            window.addEventListener('mouseup', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!dragState.dragging) return;
+            panel.style.left = (dragState.startLeft + e.clientX - dragState.startX) + 'px';
+            panel.style.top = (dragState.startTop + e.clientY - dragState.startY) + 'px';
+        }
+
+        function stopDrag() {
+            dragState.dragging = false;
+            window.removeEventListener('mousemove', onDrag);
+            window.removeEventListener('mouseup', stopDrag);
+        }
+
+        function attachEventListeners(colInputs, colDisplays, totalEl) {
+            var handlers = window.handlersRegistry['reportTosifi'];
+            if (!handlers) {
+                console.error('handlers برای reportTosifi یافت نشد!');
+                return;
+            }
+            var spacing = handlers.spacing;
+            var zoom = handlers.zoom;
+            var column = handlers.column;
+
+            var displays = {
+                topHeight: document.getElementById('reportTosifi-topHeightDisp'),
+                bottomHeight: document.getElementById('reportTosifi-bottomHeightDisp'),
+                rightHeight: document.getElementById('reportTosifi-rightHeightDisp'),
+                widthDisp: document.getElementById('reportTosifi-widthDisp')
+            };
+
+            document.getElementById('reportTosifi-increaseTopBtn').addEventListener('click', function() { spacing.increaseTop(displays); });
+            document.getElementById('reportTosifi-decreaseTopBtn').addEventListener('click', function() { spacing.decreaseTop(displays); });
+            document.getElementById('reportTosifi-increaseTopCoarseBtn').addEventListener('click', function() { spacing.increaseTopCoarse(displays); });
+            document.getElementById('reportTosifi-decreaseTopCoarseBtn').addEventListener('click', function() { spacing.decreaseTopCoarse(displays); });
+            document.getElementById('reportTosifi-increaseBottomBtn').addEventListener('click', function() { spacing.increaseBottom(displays); });
+            document.getElementById('reportTosifi-decreaseBottomBtn').addEventListener('click', function() { spacing.decreaseBottom(displays); });
+            document.getElementById('reportTosifi-increaseBottomCoarseBtn').addEventListener('click', function() { spacing.increaseBottomCoarse(displays); });
+            document.getElementById('reportTosifi-decreaseBottomCoarseBtn').addEventListener('click', function() { spacing.decreaseBottomCoarse(displays); });
+            document.getElementById('reportTosifi-increaseRightBtn').addEventListener('click', function() { spacing.increaseRight(displays); });
+            document.getElementById('reportTosifi-decreaseRightBtn').addEventListener('click', function() { spacing.decreaseRight(displays); });
+            document.getElementById('reportTosifi-increaseRightCoarseBtn').addEventListener('click', function() { spacing.increaseRightCoarse(displays); });
+            document.getElementById('reportTosifi-decreaseRightCoarseBtn').addEventListener('click', function() { spacing.decreaseRightCoarse(displays); });
+            document.getElementById('reportTosifi-increaseWidthBtn').addEventListener('click', function() { spacing.increaseWidth(displays); });
+            document.getElementById('reportTosifi-decreaseWidthBtn').addEventListener('click', function() { spacing.decreaseWidth(displays); });
+            document.getElementById('reportTosifi-increaseWidthCoarseBtn').addEventListener('click', function() { spacing.increaseWidthCoarse(displays); });
+            document.getElementById('reportTosifi-decreaseWidthCoarseBtn').addEventListener('click', function() { spacing.decreaseWidthCoarse(displays); });
+            document.getElementById('reportTosifi-applySpacingBtn').addEventListener('click', function() { spacing.applyStored(); });
+
+            document.getElementById('reportTosifi-increaseZoomBtn').addEventListener('click', function() { zoom.set(zoom.get() + 1); });
+            document.getElementById('reportTosifi-decreaseZoomBtn').addEventListener('click', function() { zoom.set(zoom.get() - 1); });
+            document.getElementById('reportTosifi-increaseZoomCoarseBtn').addEventListener('click', function() { zoom.set(zoom.get() + 5); });
+            document.getElementById('reportTosifi-decreaseZoomCoarseBtn').addEventListener('click', function() { zoom.set(zoom.get() - 5); });
+
+            var currentWidths = column.getWidths();
+            for (var i = 0; i < 6; i++) {
+                colInputs[i].value = currentWidths[i];
+                colDisplays[i].textContent = currentWidths[i] + '%';
+                (function(index) {
+                    colInputs[index].addEventListener('input', function() {
+                        var val = parseInt(this.value) || 1;
+                        column.setWidth(index, val);
+                        colDisplays[index].textContent = val + '%';
+                        var sum = column.getSum();
+                        totalEl.textContent = sum + '%';
+                        totalEl.style.color = sum === 100 ? '#2b8a3e' : '#c92a2a';
+                    });
+                })(i);
+            }
+            var sum = column.getSum();
             totalEl.textContent = sum + '%';
             totalEl.style.color = sum === 100 ? '#2b8a3e' : '#c92a2a';
+            console.log('رویدادهای پنل گزارش متصل شدند');
         }
+
+        // همه چیز آماده است
+        createFloatingIcon();
+        createPanel();
     }
 
-    /* ---------- ثبت در رجیستری ---------- */
-    function emptyFontHandler() {}
-
-    initStoredValues();
-
-    window.registerSection('reportTosifi', {
-        spacing: {
-            increaseTop: function(d) { adjustTopMargin(1); },
-            decreaseTop: function(d) { adjustTopMargin(-1); },
-            increaseTopCoarse: function(d) { adjustTopMargin(5); },
-            decreaseTopCoarse: function(d) { adjustTopMargin(-5); },
-            increaseBottom: function(d) { adjustBottomSpacing(1); },
-            decreaseBottom: function(d) { adjustBottomSpacing(-1); },
-            increaseBottomCoarse: function(d) { adjustBottomSpacing(5); },
-            decreaseBottomCoarse: function(d) { adjustBottomSpacing(-5); },
-            increaseRight: function(d) { adjustRightMargin(1); },
-            decreaseRight: function(d) { adjustRightMargin(-1); },
-            increaseRightCoarse: function(d) { adjustRightMargin(5); },
-            decreaseRightCoarse: function(d) { adjustRightMargin(-5); },
-            increaseWidth: function(d) { adjustWidth(1); },
-            decreaseWidth: function(d) { adjustWidth(-1); },
-            increaseWidthCoarse: function(d) { adjustWidth(5); },
-            decreaseWidthCoarse: function(d) { adjustWidth(-5); },
-            applyStored: applyStored
-        },
-        fonts: { /* خالی */ },
-        zoom: {
-            get: function() { return zoomLevel; },
-            set: function(val) {
-                zoomLevel = Math.max(50, Math.min(150, val));
-                applyZoom();
-                updateDisplays();
-            },
-            apply: applyZoom
-        },
-        column: {
-            getWidths: getColumnWidths,
-            setWidth: setColumnWidth,
-            apply: applyColumnWidths,
-            getSum: function() { return colWidths.reduce(function(a,b){return a+b;},0); }
-        }
-    });
+    waitForHandlers(init);
 })();
