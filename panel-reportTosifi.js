@@ -1,4 +1,4 @@
-// panel-reportTosifi.js (بدون اسکرول، با بخش‌های کشویی)
+// panel-reportTosifi.js (بدون اسکرول تا آستانهٔ دید، با اسکرول در صورت نیاز و بخش‌های کشویی)
 (function() {
     'use strict';
     console.log('panel-reportTosifi.js اجرا شد');
@@ -76,8 +76,8 @@
             }
             panel = document.createElement('div');
             panel.id = 'reportTosifi-editor-panel';
-            // بدون max-height و overflow-y – ارتفاع پنل به صورت خودکار با محتوا تغییر می‌کند
-            panel.style.cssText = 'position:fixed;top:100px;right:20px;z-index:999999;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);padding:12px;width:320px;font-family:Tahoma,sans-serif;font-size:13px;display:none;user-select:none;';
+            // ارتفاع پنل تا نزدیکی پایین صفحه آزاد است و پس از آن اسکرول داخلی فعال می‌شود
+            panel.style.cssText = 'position:fixed;top:100px;right:20px;z-index:999999;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);padding:12px;width:320px;max-height:calc(100vh - 140px);overflow-y:auto;font-family:Tahoma,sans-serif;font-size:13px;display:none;user-select:none;';
 
             var titleBar = document.createElement('div');
             titleBar.style.cssText = 'cursor:move;background:#f8f9fa;padding:6px 30px 6px 10px;margin:-12px -12px 10px -12px;border-radius:8px 8px 0 0;font-weight:bold;color:#333;border-bottom:1px solid #dee2e6;position:relative;';
@@ -96,8 +96,8 @@
             marginToggle.style.cssText = 'display:flex;align-items:center;cursor:pointer;margin-bottom:4px;';
             marginToggle.innerHTML = '<span style="font-weight:bold;color:#495057;">تنظیمات حاشیه‌ها</span><span style="margin-left:auto;font-size:16px;">▼</span>';
             var marginContent = document.createElement('div');
-            marginContent.style.cssText = 'margin-bottom:8px;'; // محتوای حاشیه‌ها
-            // تابع ساخت ردیف جهت‌ها را به marginContent اضافه می‌کنیم
+            marginContent.style.cssText = 'margin-bottom:8px;';
+            
             function addDirectionRow(label, incFineId, decFineId, dispId, incCoarseId, decCoarseId) {
                 var container = document.createElement('div');
                 container.style.cssText = 'margin-bottom:6px;';
@@ -195,14 +195,14 @@
             panel.appendChild(zoomToggle);
             panel.appendChild(zoomContent);
 
-            // دکمه اعمال فاصله‌ها (همیشه قابل مشاهده)
+            // دکمه اعمال فاصله‌ها
             var applyBtn = document.createElement('button');
             applyBtn.id = 'reportTosifi-applySpacingBtn';
             applyBtn.textContent = 'اعمال فاصله‌ها';
             applyBtn.style.cssText = 'margin-top:4px;width:100%;padding:6px;background:#0050ef;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;transition:background 0.2s;';
             panel.appendChild(applyBtn);
 
-            // ---------- بخش ستون‌ها (با باز شدن کامل و بدون اسکرول) ----------
+            // ---------- بخش ستون‌ها (با باز شدن کامل و اسکرول در پنل در صورت نیاز) ----------
             var colToggleDiv = document.createElement('div');
             colToggleDiv.style.cssText = 'margin-top:10px;';
             var colToggleBtn = document.createElement('button');
@@ -280,7 +280,6 @@
                 colSectionVisible = !colSectionVisible;
                 colContent.style.display = colSectionVisible ? 'block' : 'none';
                 colToggleBtn.textContent = 'تنظیمات ستون‌ها ' + (colSectionVisible ? '▼' : '▶');
-                // ارتفاع پنل خودکار تنظیم می‌شود (بدون اسکرول)
             });
 
             attachEventListeners(colInputs, colDisplays, totalValue);
