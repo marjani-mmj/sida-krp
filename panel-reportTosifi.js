@@ -1,4 +1,4 @@
-// panel-reportTosifi.js (تجمیع حاشیه و زوم، طراحی کادر برای عنوان)
+// panel-reportTosifi.js (حذف اطلاعات آموزش و پرورش از فوتر)
 (function() {
     'use strict';
     console.log('panel-reportTosifi.js اجرا شد');
@@ -23,7 +23,7 @@
         var isPanelVisible = false;
         var dragState = { dragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
         var colSectionVisible = false;
-        var marginSectionVisible = true; // حاشیه + زوم با هم
+        var marginSectionVisible = true;
 
         function showPanel() {
             if (!panel || !document.body.contains(panel)) {
@@ -89,7 +89,7 @@
             titleBar.appendChild(closeBtn);
             panel.appendChild(titleBar);
 
-            // ---------- بخش یکپارچهٔ حاشیه‌ها + Zoom (با کادر مشابه دکمه ستون‌ها) ----------
+            // بخش یکپارچهٔ حاشیه‌ها + Zoom
             var marginToggleBtn = document.createElement('button');
             marginToggleBtn.style.cssText = 'width:100%;padding:5px;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;cursor:pointer;font-weight:bold;color:#333;margin-bottom:6px;text-align:right;';
             marginToggleBtn.innerHTML = 'تنظیمات حاشیه‌ها و Zoom <span style="float:left;">▼</span>';
@@ -141,7 +141,7 @@
             addDirectionRow('راست', 'reportTosifi-increaseRightBtn', 'reportTosifi-decreaseRightBtn', 'reportTosifi-rightHeightDisp', 'reportTosifi-increaseRightCoarseBtn', 'reportTosifi-decreaseRightCoarseBtn');
             addDirectionRow('پهنا', 'reportTosifi-increaseWidthBtn', 'reportTosifi-decreaseWidthBtn', 'reportTosifi-widthDisp', 'reportTosifi-increaseWidthCoarseBtn', 'reportTosifi-decreaseWidthCoarseBtn');
 
-            // ردیف Zoom داخل همان بخش
+            // ردیف Zoom
             var zoomRow = document.createElement('div');
             zoomRow.style.cssText = 'display:flex;align-items:center;margin-top:6px;';
             var zoomLabel = document.createElement('span');
@@ -191,7 +191,7 @@
             applyBtn.style.cssText = 'margin-top:8px;width:100%;padding:6px;background:#0050ef;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;transition:background 0.2s;';
             panel.appendChild(applyBtn);
 
-            // بخش ستون‌ها (همانند قبل)
+            // بخش ستون‌ها
             var colToggleDiv = document.createElement('div');
             colToggleDiv.style.cssText = 'margin-top:10px;';
             var colToggleBtn = document.createElement('button');
@@ -244,14 +244,9 @@
             colToggleDiv.appendChild(colContent);
             panel.appendChild(colToggleDiv);
 
-            // فوتر
-            var footerText = document.createElement('div');
-            footerText.style.cssText = 'margin-top:12px;text-align:center;font-size:11px;color:#adb5bd;line-height:1.6;';
-            footerText.innerHTML = 'اداره کل آموزش و پرورش خراسان رضوی<br>آموزش و پرورش خلیل آباد <br>کارشناسی سنجش - marjani.mmj@gmail.com';
-            panel.appendChild(footerText);
-
+            // لینک کهکشان سافت (بدون متن آموزش و پرورش)
             var siteLink = document.createElement('div');
-            siteLink.style.cssText = 'margin-top:8px;text-align:center;';
+            siteLink.style.cssText = 'margin-top:12px;text-align:center;';
             var link = document.createElement('a');
             link.href = 'http://kahkeshansoft.ir/';
             link.target = '_blank';
