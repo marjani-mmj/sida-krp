@@ -1,4 +1,4 @@
-// panel-reportTosifi.js (حذف اطلاعات آموزش و پرورش از فوتر)
+// panel-reportTosifi.js (نسخه نهایی با متن ترغیبی)
 (function() {
     'use strict';
     console.log('panel-reportTosifi.js اجرا شد');
@@ -89,7 +89,7 @@
             titleBar.appendChild(closeBtn);
             panel.appendChild(titleBar);
 
-            // بخش یکپارچهٔ حاشیه‌ها + Zoom
+            // ---------- بخش یکپارچهٔ حاشیه‌ها + Zoom ----------
             var marginToggleBtn = document.createElement('button');
             marginToggleBtn.style.cssText = 'width:100%;padding:5px;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;cursor:pointer;font-weight:bold;color:#333;margin-bottom:6px;text-align:right;';
             marginToggleBtn.innerHTML = 'تنظیمات حاشیه‌ها و Zoom <span style="float:left;">▼</span>';
@@ -244,18 +244,20 @@
             colToggleDiv.appendChild(colContent);
             panel.appendChild(colToggleDiv);
 
-            // لینک کهکشان سافت (بدون متن آموزش و پرورش)
-            var siteLink = document.createElement('div');
-            siteLink.style.cssText = 'margin-top:12px;text-align:center;';
-            var link = document.createElement('a');
-            link.href = 'http://kahkeshansoft.ir/';
-            link.target = '_blank';
-            link.textContent = 'kahkeshansoft.ir';
-            link.style.cssText = 'color:#0050ef;text-decoration:none;font-size:12px;font-weight:bold;';
-            link.addEventListener('mouseenter', function() { this.style.textDecoration = 'underline'; });
-            link.addEventListener('mouseleave', function() { this.style.textDecoration = 'none'; });
-            siteLink.appendChild(link);
-            panel.appendChild(siteLink);
+            // ---------- بخش ترغیبی + لینک (جایگزین اطلاعات آموزش و پرورش) ----------
+            var promoDiv = document.createElement('div');
+            promoDiv.style.cssText = 'margin-top:14px;text-align:center;font-size:12px;color:#495057;line-height:1.8;';
+            promoDiv.innerHTML = '🔥 <b>نرم‌افزارهای رایگان بیشتر را از دست ندهید!</b><br>';
+
+            var siteLink = document.createElement('a');
+            siteLink.href = 'http://kahkeshansoft.ir/';
+            siteLink.target = '_blank';
+            siteLink.textContent = 'kahkeshansoft.ir';
+            siteLink.style.cssText = 'color:#0050ef;text-decoration:none;font-size:12px;font-weight:bold;';
+            siteLink.addEventListener('mouseenter', function() { this.style.textDecoration = 'underline'; });
+            siteLink.addEventListener('mouseleave', function() { this.style.textDecoration = 'none'; });
+            promoDiv.appendChild(siteLink);
+            panel.appendChild(promoDiv);
 
             document.body.appendChild(panel);
             console.log('پنل گزارش ساخته شد');
