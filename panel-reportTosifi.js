@@ -1,9 +1,9 @@
-
-// panel-reportTosifi.js
+// panel-reportTosifi.js (اصلاح‌شده - نسخه نهایی)
 (function() {
     'use strict';
     console.log('panel-reportTosifi.js اجرا شد');
 
+    // صبر می‌کنیم تا حتماً section-reportTosifi.js هندلرها را ثبت کند
     function waitForHandlers(callback) {
         if (window.handlersRegistry && window.handlersRegistry['reportTosifi']) {
             callback();
@@ -19,20 +19,40 @@
     }
 
     function init() {
-        // شرط قدیمی حذف شده است – پنل همیشه ساخته می‌شود
         var panel = null;
         var toggleIcon = null;
         var isPanelVisible = false;
         var dragState = { dragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
         var colSectionVisible = false;
 
-        function minimizePanel() {
+        // تابع نمایش پنل (با بازسازی در صورت نیاز و ریست موقعیت)
+        function showPanel() {
+            // اگر پنل وجود ندارد یا از DOM خارج شده، دوباره بساز
+            if (!panel || !document.body.contains(panel)) {
+                if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+                createPanel();
+            }
+            // بازنشانی موقعیت به پیش‌فرض
+            panel.style.left = 'auto';
+            panel.style.right = '20px';
+            panel.style.top = '100px';
+            // بستن پنل اصلی کارنامه در صورت باز بودن
+            if (window.minimizeMainPanel) window.minimizeMainPanel();
+            isPanelVisible = true;
+            panel.style.display = 'block';
+            if (toggleIcon) toggleIcon.innerHTML = '🔧';
+        }
+
+        // تابع مخفی کردن پنل
+        function hidePanel() {
             if (!panel) return;
             isPanelVisible = false;
             panel.style.display = 'none';
             if (toggleIcon) toggleIcon.innerHTML = '📊';
         }
-        window.minimizeReportPanel = minimizePanel;
+
+        // برای استفاده خارجی (مثلاً بستن این پنل از جای دیگر)
+        window.minimizeReportPanel = hidePanel;
 
         function createFloatingIcon() {
             if (toggleIcon) return;
@@ -44,14 +64,10 @@
             toggleIcon.addEventListener('mouseenter', function() { this.style.transform = 'scale(1.1)'; });
             toggleIcon.addEventListener('mouseleave', function() { this.style.transform = 'scale(1)'; });
             toggleIcon.addEventListener('click', function() {
-                if (!panel) createPanel();
                 if (isPanelVisible) {
-                    minimizePanel();
+                    hidePanel();
                 } else {
-                    if (window.minimizeMainPanel) window.minimizeMainPanel();
-                    isPanelVisible = true;
-                    panel.style.display = 'block';
-                    toggleIcon.innerHTML = '🔧';
+                    showPanel();
                 }
             });
             document.body.appendChild(toggleIcon);
@@ -59,10 +75,15 @@
         }
 
         function createPanel() {
-            if (panel) return;
+            // اگر پنلی موجود است و تازه می‌خواهیم دوباره بسازیم، نسخه قبلی را حذف کنیم
+            if (panel && panel.parentNode) {
+                panel.parentNode.removeChild(panel);
+                panel = null;
+            }
             panel = document.createElement('div');
             panel.id = 'reportTosifi-editor-panel';
-            panel.style.cssText = 'position:fixed;top:100px;right:20px;z-index:999999;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);padding:12px;width:320px;font-family:Tahoma,sans-serif;font-size:13px;display:none;user-select:none;';
+            // اضافه شدن max-height و overflow-y برای جلوگیری از برش محتوا
+            panel.style.cssText = 'position:fixed;top:100px;right:20px;z-index:999999;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);padding:12px;width:320px;max-height:80vh;overflow-y:auto;font-family:Tahoma,sans-serif;font-size:13px;display:none;user-select:none;';
 
             var titleBar = document.createElement('div');
             titleBar.style.cssText = 'cursor:move;background:#f8f9fa;padding:6px 30px 6px 10px;margin:-12px -12px 10px -12px;border-radius:8px 8px 0 0;font-weight:bold;color:#333;border-bottom:1px solid #dee2e6;position:relative;';
@@ -72,7 +93,7 @@
             closeBtn.innerHTML = '&times;';
             closeBtn.style.cssText = 'position:absolute;top:4px;left:8px;font-size:18px;font-weight:bold;color:#888;cursor:pointer;line-height:1;';
             closeBtn.title = 'بستن پنل';
-            closeBtn.addEventListener('click', function(e) { e.stopPropagation(); minimizePanel(); });
+            closeBtn.addEventListener('click', function(e) { e.stopPropagation(); hidePanel(); });
             titleBar.appendChild(closeBtn);
             panel.appendChild(titleBar);
 
@@ -168,6 +189,7 @@
             applyBtn.style.cssText = 'margin-top:8px;width:100%;padding:6px;background:#0050ef;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;transition:background 0.2s;';
             panel.appendChild(applyBtn);
 
+            // بخش ستون‌ها
             var colToggleDiv = document.createElement('div');
             colToggleDiv.style.cssText = 'margin-top:10px;';
             var colToggleBtn = document.createElement('button');
@@ -225,6 +247,19 @@
             footerText.innerHTML = 'اداره کل آموزش و پرورش خراسان رضوی<br>آموزش و پرورش خلیل آباد <br>کارشناسی سنجش - marjani.mmj@gmail.com';
             panel.appendChild(footerText);
 
+            // لینک به سایت کهکشان سافت
+            var siteLink = document.createElement('div');
+            siteLink.style.cssText = 'margin-top:8px;text-align:center;';
+            var link = document.createElement('a');
+            link.href = 'http://kahkeshansoft.ir/';
+            link.target = '_blank';
+            link.textContent = 'kahkeshansoft.ir';
+            link.style.cssText = 'color:#0050ef;text-decoration:none;font-size:12px;font-weight:bold;';
+            link.addEventListener('mouseenter', function() { this.style.textDecoration = 'underline'; });
+            link.addEventListener('mouseleave', function() { this.style.textDecoration = 'none'; });
+            siteLink.appendChild(link);
+            panel.appendChild(siteLink);
+
             document.body.appendChild(panel);
             console.log('پنل گزارش ساخته شد');
 
@@ -240,6 +275,7 @@
         function startDrag(e) {
             e.preventDefault();
             var rect = panel.getBoundingClientRect();
+            // تبدیل position از right:... به left:... برای درگ روان
             panel.style.right = 'auto';
             panel.style.left = rect.left + 'px';
             dragState.dragging = true;
@@ -324,8 +360,9 @@
             console.log('رویدادهای پنل گزارش متصل شدند');
         }
 
+        // همه چیز آماده است
         createFloatingIcon();
-        createPanel();
+        createPanel(); // پنل اولیه را می‌سازیم اما مخفی است
     }
 
     waitForHandlers(init);
