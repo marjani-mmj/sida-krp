@@ -1,9 +1,8 @@
-// panel-reportTosifi.js (اصلاح‌شده - نسخه نهایی)
+// panel-reportTosifi.js (بدون اسکرول، با بخش‌های کشویی)
 (function() {
     'use strict';
     console.log('panel-reportTosifi.js اجرا شد');
 
-    // صبر می‌کنیم تا حتماً section-reportTosifi.js هندلرها را ثبت کند
     function waitForHandlers(callback) {
         if (window.handlersRegistry && window.handlersRegistry['reportTosifi']) {
             callback();
@@ -24,26 +23,23 @@
         var isPanelVisible = false;
         var dragState = { dragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
         var colSectionVisible = false;
+        var marginSectionVisible = true;
+        var zoomSectionVisible = true;
 
-        // تابع نمایش پنل (با بازسازی در صورت نیاز و ریست موقعیت)
         function showPanel() {
-            // اگر پنل وجود ندارد یا از DOM خارج شده، دوباره بساز
             if (!panel || !document.body.contains(panel)) {
                 if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
                 createPanel();
             }
-            // بازنشانی موقعیت به پیش‌فرض
             panel.style.left = 'auto';
             panel.style.right = '20px';
             panel.style.top = '100px';
-            // بستن پنل اصلی کارنامه در صورت باز بودن
             if (window.minimizeMainPanel) window.minimizeMainPanel();
             isPanelVisible = true;
             panel.style.display = 'block';
             if (toggleIcon) toggleIcon.innerHTML = '🔧';
         }
 
-        // تابع مخفی کردن پنل
         function hidePanel() {
             if (!panel) return;
             isPanelVisible = false;
@@ -51,7 +47,6 @@
             if (toggleIcon) toggleIcon.innerHTML = '📊';
         }
 
-        // برای استفاده خارجی (مثلاً بستن این پنل از جای دیگر)
         window.minimizeReportPanel = hidePanel;
 
         function createFloatingIcon() {
@@ -75,15 +70,14 @@
         }
 
         function createPanel() {
-            // اگر پنلی موجود است و تازه می‌خواهیم دوباره بسازیم، نسخه قبلی را حذف کنیم
             if (panel && panel.parentNode) {
                 panel.parentNode.removeChild(panel);
                 panel = null;
             }
             panel = document.createElement('div');
             panel.id = 'reportTosifi-editor-panel';
-            // اضافه شدن max-height و overflow-y برای جلوگیری از برش محتوا
-            panel.style.cssText = 'position:fixed;top:100px;right:20px;z-index:999999;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);padding:12px;width:320px;max-height:80vh;overflow-y:auto;font-family:Tahoma,sans-serif;font-size:13px;display:none;user-select:none;';
+            // بدون max-height و overflow-y – ارتفاع پنل به صورت خودکار با محتوا تغییر می‌کند
+            panel.style.cssText = 'position:fixed;top:100px;right:20px;z-index:999999;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);padding:12px;width:320px;font-family:Tahoma,sans-serif;font-size:13px;display:none;user-select:none;';
 
             var titleBar = document.createElement('div');
             titleBar.style.cssText = 'cursor:move;background:#f8f9fa;padding:6px 30px 6px 10px;margin:-12px -12px 10px -12px;border-radius:8px 8px 0 0;font-weight:bold;color:#333;border-bottom:1px solid #dee2e6;position:relative;';
@@ -97,11 +91,13 @@
             titleBar.appendChild(closeBtn);
             panel.appendChild(titleBar);
 
-            var secMargin = document.createElement('div');
-            secMargin.innerHTML = '<b style="color:#495057;">حاشیه‌ها</b>';
-            secMargin.style.marginBottom = '8px';
-            panel.appendChild(secMargin);
-
+            // ---------- بخش حاشیه‌ها (کشویی) ----------
+            var marginToggle = document.createElement('div');
+            marginToggle.style.cssText = 'display:flex;align-items:center;cursor:pointer;margin-bottom:4px;';
+            marginToggle.innerHTML = '<span style="font-weight:bold;color:#495057;">تنظیمات حاشیه‌ها</span><span style="margin-left:auto;font-size:16px;">▼</span>';
+            var marginContent = document.createElement('div');
+            marginContent.style.cssText = 'margin-bottom:8px;'; // محتوای حاشیه‌ها
+            // تابع ساخت ردیف جهت‌ها را به marginContent اضافه می‌کنیم
             function addDirectionRow(label, incFineId, decFineId, dispId, incCoarseId, decCoarseId) {
                 var container = document.createElement('div');
                 container.style.cssText = 'margin-bottom:6px;';
@@ -139,7 +135,7 @@
                 incCoarse.style.cssText = 'width:32px;height:28px;font-size:13px;font-weight:bold;line-height:1;margin:0 1px;background:#b2f2bb;border:1px solid #51cf66;border-radius:4px;cursor:pointer;color:#2b8a3e;';
                 row.appendChild(incCoarse);
                 container.appendChild(row);
-                panel.appendChild(container);
+                marginContent.appendChild(container);
             }
 
             addDirectionRow('بالا', 'reportTosifi-increaseTopBtn', 'reportTosifi-decreaseTopBtn', 'reportTosifi-topHeightDisp', 'reportTosifi-increaseTopCoarseBtn', 'reportTosifi-decreaseTopCoarseBtn');
@@ -147,14 +143,23 @@
             addDirectionRow('راست', 'reportTosifi-increaseRightBtn', 'reportTosifi-decreaseRightBtn', 'reportTosifi-rightHeightDisp', 'reportTosifi-increaseRightCoarseBtn', 'reportTosifi-decreaseRightCoarseBtn');
             addDirectionRow('پهنا', 'reportTosifi-increaseWidthBtn', 'reportTosifi-decreaseWidthBtn', 'reportTosifi-widthDisp', 'reportTosifi-increaseWidthCoarseBtn', 'reportTosifi-decreaseWidthCoarseBtn');
 
-            var zoomContainer = document.createElement('div');
-            zoomContainer.style.cssText = 'margin-bottom:6px;margin-top:6px;';
+            marginToggle.addEventListener('click', function() {
+                marginSectionVisible = !marginSectionVisible;
+                marginContent.style.display = marginSectionVisible ? 'block' : 'none';
+                var arrow = marginToggle.querySelector('span:last-child');
+                arrow.textContent = marginSectionVisible ? '▼' : '▶';
+            });
+            panel.appendChild(marginToggle);
+            panel.appendChild(marginContent);
+
+            // ---------- بخش Zoom (کشویی) ----------
+            var zoomToggle = document.createElement('div');
+            zoomToggle.style.cssText = 'display:flex;align-items:center;cursor:pointer;margin-bottom:4px;';
+            zoomToggle.innerHTML = '<span style="font-weight:bold;color:#495057;">Zoom</span><span style="margin-left:auto;font-size:16px;">▼</span>';
+            var zoomContent = document.createElement('div');
+            zoomContent.style.cssText = 'margin-bottom:8px;';
             var zoomRow = document.createElement('div');
             zoomRow.style.cssText = 'display:flex;align-items:center;';
-            var zoomLabel = document.createElement('span');
-            zoomLabel.textContent = 'Zoom';
-            zoomLabel.style.cssText = 'width:45px;text-align:right;margin-left:5px;font-weight:bold;color:#495057;';
-            zoomRow.appendChild(zoomLabel);
             var decZoomCoarse = document.createElement('button');
             decZoomCoarse.id = 'reportTosifi-decreaseZoomCoarseBtn';
             decZoomCoarse.textContent = '−۵';
@@ -180,16 +185,24 @@
             incZoomCoarse.textContent = '+۵';
             incZoomCoarse.style.cssText = 'width:32px;height:28px;font-size:13px;font-weight:bold;line-height:1;margin:0 1px;background:#b2f2bb;border:1px solid #51cf66;border-radius:4px;cursor:pointer;color:#2b8a3e;';
             zoomRow.appendChild(incZoomCoarse);
-            zoomContainer.appendChild(zoomRow);
-            panel.appendChild(zoomContainer);
+            zoomContent.appendChild(zoomRow);
+            zoomToggle.addEventListener('click', function() {
+                zoomSectionVisible = !zoomSectionVisible;
+                zoomContent.style.display = zoomSectionVisible ? 'block' : 'none';
+                var arrow = zoomToggle.querySelector('span:last-child');
+                arrow.textContent = zoomSectionVisible ? '▼' : '▶';
+            });
+            panel.appendChild(zoomToggle);
+            panel.appendChild(zoomContent);
 
+            // دکمه اعمال فاصله‌ها (همیشه قابل مشاهده)
             var applyBtn = document.createElement('button');
             applyBtn.id = 'reportTosifi-applySpacingBtn';
             applyBtn.textContent = 'اعمال فاصله‌ها';
-            applyBtn.style.cssText = 'margin-top:8px;width:100%;padding:6px;background:#0050ef;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;transition:background 0.2s;';
+            applyBtn.style.cssText = 'margin-top:4px;width:100%;padding:6px;background:#0050ef;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;transition:background 0.2s;';
             panel.appendChild(applyBtn);
 
-            // بخش ستون‌ها
+            // ---------- بخش ستون‌ها (با باز شدن کامل و بدون اسکرول) ----------
             var colToggleDiv = document.createElement('div');
             colToggleDiv.style.cssText = 'margin-top:10px;';
             var colToggleBtn = document.createElement('button');
@@ -242,12 +255,12 @@
             colToggleDiv.appendChild(colContent);
             panel.appendChild(colToggleDiv);
 
+            // فوتر
             var footerText = document.createElement('div');
             footerText.style.cssText = 'margin-top:12px;text-align:center;font-size:11px;color:#adb5bd;line-height:1.6;';
             footerText.innerHTML = 'اداره کل آموزش و پرورش خراسان رضوی<br>آموزش و پرورش خلیل آباد <br>کارشناسی سنجش - marjani.mmj@gmail.com';
             panel.appendChild(footerText);
 
-            // لینک به سایت کهکشان سافت
             var siteLink = document.createElement('div');
             siteLink.style.cssText = 'margin-top:8px;text-align:center;';
             var link = document.createElement('a');
@@ -267,6 +280,7 @@
                 colSectionVisible = !colSectionVisible;
                 colContent.style.display = colSectionVisible ? 'block' : 'none';
                 colToggleBtn.textContent = 'تنظیمات ستون‌ها ' + (colSectionVisible ? '▼' : '▶');
+                // ارتفاع پنل خودکار تنظیم می‌شود (بدون اسکرول)
             });
 
             attachEventListeners(colInputs, colDisplays, totalValue);
@@ -275,7 +289,6 @@
         function startDrag(e) {
             e.preventDefault();
             var rect = panel.getBoundingClientRect();
-            // تبدیل position از right:... به left:... برای درگ روان
             panel.style.right = 'auto';
             panel.style.left = rect.left + 'px';
             dragState.dragging = true;
@@ -360,9 +373,8 @@
             console.log('رویدادهای پنل گزارش متصل شدند');
         }
 
-        // همه چیز آماده است
         createFloatingIcon();
-        createPanel(); // پنل اولیه را می‌سازیم اما مخفی است
+        createPanel();
     }
 
     waitForHandlers(init);
