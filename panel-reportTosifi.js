@@ -1,4 +1,4 @@
-// panel-reportTosifi.js (بدون اسکرول تا آستانهٔ دید، با اسکرول در صورت نیاز و بخش‌های کشویی)
+// panel-reportTosifi.js (تجمیع حاشیه و زوم، طراحی کادر برای عنوان)
 (function() {
     'use strict';
     console.log('panel-reportTosifi.js اجرا شد');
@@ -23,8 +23,7 @@
         var isPanelVisible = false;
         var dragState = { dragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
         var colSectionVisible = false;
-        var marginSectionVisible = true;
-        var zoomSectionVisible = true;
+        var marginSectionVisible = true; // حاشیه + زوم با هم
 
         function showPanel() {
             if (!panel || !document.body.contains(panel)) {
@@ -76,7 +75,6 @@
             }
             panel = document.createElement('div');
             panel.id = 'reportTosifi-editor-panel';
-            // ارتفاع پنل تا نزدیکی پایین صفحه آزاد است و پس از آن اسکرول داخلی فعال می‌شود
             panel.style.cssText = 'position:fixed;top:100px;right:20px;z-index:999999;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.2);padding:12px;width:320px;max-height:calc(100vh - 140px);overflow-y:auto;font-family:Tahoma,sans-serif;font-size:13px;display:none;user-select:none;';
 
             var titleBar = document.createElement('div');
@@ -91,13 +89,13 @@
             titleBar.appendChild(closeBtn);
             panel.appendChild(titleBar);
 
-            // ---------- بخش حاشیه‌ها (کشویی) ----------
-            var marginToggle = document.createElement('div');
-            marginToggle.style.cssText = 'display:flex;align-items:center;cursor:pointer;margin-bottom:4px;';
-            marginToggle.innerHTML = '<span style="font-weight:bold;color:#495057;">تنظیمات حاشیه‌ها</span><span style="margin-left:auto;font-size:16px;">▼</span>';
+            // ---------- بخش یکپارچهٔ حاشیه‌ها + Zoom (با کادر مشابه دکمه ستون‌ها) ----------
+            var marginToggleBtn = document.createElement('button');
+            marginToggleBtn.style.cssText = 'width:100%;padding:5px;background:#e9ecef;border:1px solid #ced4da;border-radius:4px;cursor:pointer;font-weight:bold;color:#333;margin-bottom:6px;text-align:right;';
+            marginToggleBtn.innerHTML = 'تنظیمات حاشیه‌ها و Zoom <span style="float:left;">▼</span>';
             var marginContent = document.createElement('div');
             marginContent.style.cssText = 'margin-bottom:8px;';
-            
+
             function addDirectionRow(label, incFineId, decFineId, dispId, incCoarseId, decCoarseId) {
                 var container = document.createElement('div');
                 container.style.cssText = 'margin-bottom:6px;';
@@ -143,23 +141,13 @@
             addDirectionRow('راست', 'reportTosifi-increaseRightBtn', 'reportTosifi-decreaseRightBtn', 'reportTosifi-rightHeightDisp', 'reportTosifi-increaseRightCoarseBtn', 'reportTosifi-decreaseRightCoarseBtn');
             addDirectionRow('پهنا', 'reportTosifi-increaseWidthBtn', 'reportTosifi-decreaseWidthBtn', 'reportTosifi-widthDisp', 'reportTosifi-increaseWidthCoarseBtn', 'reportTosifi-decreaseWidthCoarseBtn');
 
-            marginToggle.addEventListener('click', function() {
-                marginSectionVisible = !marginSectionVisible;
-                marginContent.style.display = marginSectionVisible ? 'block' : 'none';
-                var arrow = marginToggle.querySelector('span:last-child');
-                arrow.textContent = marginSectionVisible ? '▼' : '▶';
-            });
-            panel.appendChild(marginToggle);
-            panel.appendChild(marginContent);
-
-            // ---------- بخش Zoom (کشویی) ----------
-            var zoomToggle = document.createElement('div');
-            zoomToggle.style.cssText = 'display:flex;align-items:center;cursor:pointer;margin-bottom:4px;';
-            zoomToggle.innerHTML = '<span style="font-weight:bold;color:#495057;">Zoom</span><span style="margin-left:auto;font-size:16px;">▼</span>';
-            var zoomContent = document.createElement('div');
-            zoomContent.style.cssText = 'margin-bottom:8px;';
+            // ردیف Zoom داخل همان بخش
             var zoomRow = document.createElement('div');
-            zoomRow.style.cssText = 'display:flex;align-items:center;';
+            zoomRow.style.cssText = 'display:flex;align-items:center;margin-top:6px;';
+            var zoomLabel = document.createElement('span');
+            zoomLabel.textContent = 'Zoom';
+            zoomLabel.style.cssText = 'width:45px;text-align:right;margin-left:5px;font-weight:bold;color:#495057;';
+            zoomRow.appendChild(zoomLabel);
             var decZoomCoarse = document.createElement('button');
             decZoomCoarse.id = 'reportTosifi-decreaseZoomCoarseBtn';
             decZoomCoarse.textContent = '−۵';
@@ -185,24 +173,25 @@
             incZoomCoarse.textContent = '+۵';
             incZoomCoarse.style.cssText = 'width:32px;height:28px;font-size:13px;font-weight:bold;line-height:1;margin:0 1px;background:#b2f2bb;border:1px solid #51cf66;border-radius:4px;cursor:pointer;color:#2b8a3e;';
             zoomRow.appendChild(incZoomCoarse);
-            zoomContent.appendChild(zoomRow);
-            zoomToggle.addEventListener('click', function() {
-                zoomSectionVisible = !zoomSectionVisible;
-                zoomContent.style.display = zoomSectionVisible ? 'block' : 'none';
-                var arrow = zoomToggle.querySelector('span:last-child');
-                arrow.textContent = zoomSectionVisible ? '▼' : '▶';
-            });
-            panel.appendChild(zoomToggle);
-            panel.appendChild(zoomContent);
+            marginContent.appendChild(zoomRow);
 
-            // دکمه اعمال فاصله‌ها
+            marginToggleBtn.addEventListener('click', function() {
+                marginSectionVisible = !marginSectionVisible;
+                marginContent.style.display = marginSectionVisible ? 'block' : 'none';
+                var arrow = marginToggleBtn.querySelector('span');
+                arrow.textContent = marginSectionVisible ? '▼' : '▶';
+            });
+            panel.appendChild(marginToggleBtn);
+            panel.appendChild(marginContent);
+
+            // دکمه اعمال
             var applyBtn = document.createElement('button');
             applyBtn.id = 'reportTosifi-applySpacingBtn';
             applyBtn.textContent = 'اعمال فاصله‌ها';
-            applyBtn.style.cssText = 'margin-top:4px;width:100%;padding:6px;background:#0050ef;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;transition:background 0.2s;';
+            applyBtn.style.cssText = 'margin-top:8px;width:100%;padding:6px;background:#0050ef;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;transition:background 0.2s;';
             panel.appendChild(applyBtn);
 
-            // ---------- بخش ستون‌ها (با باز شدن کامل و اسکرول در پنل در صورت نیاز) ----------
+            // بخش ستون‌ها (همانند قبل)
             var colToggleDiv = document.createElement('div');
             colToggleDiv.style.cssText = 'margin-top:10px;';
             var colToggleBtn = document.createElement('button');
